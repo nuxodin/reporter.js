@@ -3,7 +3,7 @@ Website monitoring
 
 ## Features
 Send different types of notifications to a server
-- js errors ()
+- js errors
 - unhandles rejections
 - console calls (error/warn/debug)
 - ReportingObserver
@@ -16,7 +16,7 @@ Send different types of notifications to a server
 <script>
 // as it should be loaded as fast as possible, it makes sens to load it not as a module    
 window.reporterJsOptions = {
-    url: 'https://example.com/reporter.php',
+    url: 'https://example.com/errors',
     max: 50,
 }
 </script>
