@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang=en>
+    <head>
+        <meta charset=utf-8>
+        <title>unserializeStack</title>
+        <meta name=viewport content="width=device-width">
+        <script type="module" src="https://cdn.jsdelivr.net/gh/u1ui/u1/auto.js"></script>
+        <link rel=stylesheet href="https://cdn.jsdelivr.net/gh/u1ui/classless.css/simple.css">
+        <style>
+            body {
+                --width: 90rem;
+            }
+        </style>
+
+<body>
+
+<script src="../mod.js"></script>
+
+<div class=u1-flex-gap style="font-size:13px">
+    <div style="flex:1 1 20rem">
+        <label>
+            Input
+            <textarea id="inpEl" style="width:100%; height:20rem"></textarea>
+        </label>
+
+        <label>
+            Examples:
+            <select id="examples"></select>
+        </label>
+    </div>
+
+    <pre style="flex:1 1 20rem" id="stackEl"></pre>
+</div>
+
+
+<script>
+
+inpEl.addEventListener('input', show);
+
+function show() {
+    const stack = window.reporterJs.unserializeStack(inpEl.value);
+    stackEl.textContent = JSON.stringify(stack, null, 4);
+}
+
+
+const tests = {
+    'at@test':()=>{
+        (()=>{ // anonym
+            eval('() => { throw(new Error("breaking \\n error")) }')(); // eval
+            //inpEl.innerHTML = new Error('hall \n demo').stack
+            show();
+        })();
+    },
+    test:()=>{
+        tests['at@test']();
+    },
+};
+
+try {
+    tests.test();
+} catch (e) {
+    console.log(e);
+    inpEl.innerHTML = e.stack;
+    show();
+}
+
+setTimeout(()=>{
+    document.querySelectorAll('template').forEach(el=>{
+        const id = el.id;
+        const option = document.createElement('option');
+        option.value = id;
+        option.textContent = id;
+        examples.appendChild(option);
+    });
+    examples.addEventListener('change', ()=>{
+        const id = examples.value;
+        const el = document.getElementById(id);
+        inpEl.value = el.innerHTML;
+        show();
+    });
+});
+
+</script>
+
+
+<template id="firefox"></template>
+
+<template id="chrome">ReferenceError: FAIL is not defined
+    at Constraint.execute (deltablue.js:525:2)
+    at Constraint.recalculate (deltablue.js:424:21)
+    at Planner.addPropagate (deltablue.js:701:6)
+    at Constraint.satisfy (deltablue.js:184:15)
+    at Planner.incrementalAdd (deltablue.js:591:21)
+    at Constraint.addConstraint (deltablue.js:162:10)
+    at Constraint.BinaryConstraint (deltablue.js:346:7)
+    at Constraint.EqualityConstraint (deltablue.js:515:38)
+    at chainTest (deltablue.js:807:6)
+    at deltaBlue (deltablue.js:879:2)</template>
+
+<template id="safari">global code@https://dirask.com/posts/test.html:5:20
+    write@[native code]
+    createIFrame@https://dirask.com/resources/test.js:1157:208
+    https://dirask.com/resources/test.js:1157:361
+    runCode@https://dirask.com/resources/test.js:1149:239</template>
+
+<template id="deno">Error
+    at console.<computed> [as warn] (mod.js:150:49)
+    at MysqlDb.query (Mysql.js:20:21)
+    at async denoMysql.js:62:9
+    at async testStepSanitizer (ext:cli/40_testing.js:449:5)
+    at async asyncOpSanitizer (ext:cli/40_testing.js:145:7)
+    at async resourceSanitizer (ext:cli/40_testing.js:375:5)
+    at async Object.exitSanitizer [as fn] (ext:cli/40_testing.js:432:7)
+    at async runTest (ext:cli/40_testing.js:837:5)
+    at async runTests (ext:cli/40_testing.js:1095:20)</template>
+
+<template id="node"></template>
