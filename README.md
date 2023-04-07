@@ -1,5 +1,5 @@
 # reporter.js
-Website monitoring
+Application monitoring / Troubleshooting
 
 Reporter.js is a JavaScript library for monitoring websites and Deno applications. It enables you to send notifications to a server for different types of events such as JS errors, unhandled rejections, console calls (error/warn/debug), and ReportingObserver. With reporter.js, you can track issues in your website or Deno application and resolve them quickly, improving your user experience.
 
