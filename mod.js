@@ -158,7 +158,7 @@ globalThis.reporterJs = {
                 backtrace: stack,
                 prio:      method === 'error' ? 'error' : 'warning',
             });
-            original.call(console, latest.file+':'+latest.line+':'+latest.col);
+            if (globalThis.Deno) console.log('%c↓ '+method+' '+latest.file+':'+latest.line+':'+latest.col, 'color:#00f; font-size:.8em');
             return original.apply(console, args);
         }
     },
