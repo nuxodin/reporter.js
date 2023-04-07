@@ -16,8 +16,8 @@ Send different types of notifications to a server
 <script>
 // as it should be loaded as fast as possible, it makes sens to load it not as a module    
 window.reporterJsOptions = {
-    url: 'https://example.com/errors',
-    max: 50,
+    url: 'https://example.com/errors', // reporting-url
+    max: 50, // max reportings to send
 }
 </script>
 <script src="https://cdn.jsdelivr.net/gh/nuxodin/reporter.js/mod.js"></script>
