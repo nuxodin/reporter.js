@@ -14,7 +14,7 @@ globalThis.reporterJs = {
         // addEventListener('unload',function(e){ unloading = e.type; });
         addEventListener('error', this.handleErrorEvent.bind(this), true);
         addEventListener('unhandledrejection', this.handleUnhandledRejectionEvent.bind(this), true);
-        if (window.ReportingObserver) {
+        if (globalThis.ReportingObserver) {
             const observer = new ReportingObserver(this.handleReportingObserver.bind(this), {buffered: true});
             observer.observe();
         }
@@ -29,8 +29,8 @@ globalThis.reporterJs = {
 
         if (!url || this.counter++ > max) return;
 
-        data.referer = window.document?.referrer;
-        data.request = window.location?.href;
+        data.referer = globalThis.document?.referrer;
+        data.request = globalThis.location?.href;
 
         // if (data.file && data.file === data.request) {
         //     const lines = document.documentElement.outerHTML.split('\n');
