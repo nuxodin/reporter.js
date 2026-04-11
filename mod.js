@@ -25,31 +25,33 @@ globalThis.reporterJs = {
     counter: 0,
     async send(data) {
 
-        const {url, max=50, showFirst} = globalThis.reporterJsOptions;
+        const {url, max=50, showFirst, onError} = globalThis.reporterJsOptions;
 
-        if (!url || this.counter++ > max) return;
+        if (this.counter++ > max) return;
 
         data.referer = globalThis.document?.referrer;
         data.request = globalThis.location?.href;
 
-        // if (data.file && data.file === data.request) {
-        //     const lines = document.documentElement.outerHTML.split('\n');
-        //     const i = data.line - 3;
-        //     const line = lines[i];
-        //     if (line) {
-        //         lines[i] = line.slice(0, data.col - 1) + '❌' + line.slice(data.col - 1);
-        //     }
-        //     data.sample = lines.join('\n');
-        // }
-        // if (!data.file || data.file.indexOf('://' + location.host) < 0) data.prio = 'notice';
-
-        await fetch(url, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json',},
-            body: JSON.stringify(data),
-        }).catch(e => {
-            console.log('%c Failed to send error report:' + e.message, 'color:red');
-        });
+        if (onError) await onError(data);
+        if (url) {
+            // if (data.file && data.file === data.request) {
+            //     const lines = document.documentElement.outerHTML.split('\n');
+            //     const i = data.line - 3;
+            //     const line = lines[i];
+            //     if (line) {
+            //         lines[i] = line.slice(0, data.col - 1) + '❌' + line.slice(data.col - 1);
+            //     }
+            //     data.sample = lines.join('\n');
+            // }
+            // if (!data.file || data.file.indexOf('://' + location.host) < 0) data.prio = 'notice';
+            await fetch(url, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json',},
+                body: JSON.stringify(data),
+            }).catch(e => {
+                console.warn('%c Failed to send error report:' + e.message, 'color:red');
+            });
+        }
         if (showFirst && this.counter < 2) this.showError(data);
     },
 
@@ -146,9 +148,16 @@ globalThis.reporterJs = {
     wrapConsole(method){
         const original = console[method];
         console[method] = (...args)=>{
-            const stack = this.unserializeStack(new Error().stack);
-            stack.shift();
-            const latest = stack[0] || {};
+            const errArg = args.find(a => a instanceof Error);
+            let stack, latest;
+            if (errArg?.stack) {
+                stack  = this.unserializeStack(errArg.stack);
+                latest = stack[0] || {};
+            } else {
+                stack  = this.unserializeStack(new Error().stack);
+                stack.shift();
+                latest = stack[0] || {};
+            }
             this.send({
                 message:   '(console.'+method+') '+args.join(' | '),
                 function:  latest.function,
@@ -167,27 +176,3 @@ globalThis.reporterJs = {
 globalThis.reporterJsOptions = globalThis.reporterJsOptions || {};
 
 reporterJs.init();
-
-// if (window.PerformanceObserver) {
-// 	const mainDuration = performance.timing.responseEnd - performance.timing.requestStart;
-// 	const faktor = mainDuration / 300; // reference is 200ms
-// 	faktor = Math.max(faktor, 1);
-// 	const observer = new PerformanceObserver(function(list) {
-// 		list.getEntries().forEach(function(entry){
-// 			if (entry.entryType === 'paint' && entry.duration < 10) return;
-// 			if (entry.entryType === 'resource' && entry.duration < 8000*faktor) return;
-// 			if (entry.entryType === 'navigation' && entry.duration < 8000*faktor) return;
-// 			if (entry.entryType === 'frame' && entry.duration < 8000*faktor) return;
-// 			const data = {
-// 				message:'(performance observer) v2 entryType:'+entry.entryType+' initiatorType:'+entry.initiatorType+' duration:'+entry.duration+' transferSize:'+entry.transferSize+' name:'+entry.name, //+'  |  obj:'+JSON.stringify(entry),
-// 				source:'perf',
-// 				prio:'notice',
-// 			}
-// 			if (entry.entryType === 'resource' || entry.entryType === 'navigation') {
-// 				data.file = entry.name;
-// 			}
-// 			send(data);
-// 		});
-// 	});
-// 	observer.observe({entryTypes: ['navigation','resource','mark','measure','paint']}); // longtask, frame
-// }
