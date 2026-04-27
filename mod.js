@@ -8,6 +8,9 @@
 
 globalThis.reporterJs = {
     init() {
+        if (this.initialized) return;
+        this.initialized = true;
+
         Error.stackTraceLimit = Math.max(Error.stackTraceLimit, 30);
         // let unloading = false;
         // addEventListener('beforeunload',function(e){ unloading = e.type; });
@@ -18,9 +21,8 @@ globalThis.reporterJs = {
             const observer = new ReportingObserver(this.handleReportingObserver.bind(this), {buffered: true});
             observer.observe();
         }
-        this.wrapConsole('error');
-        this.wrapConsole('warn');
-        this.wrapConsole('debug');
+        const consoleMethods = globalThis.reporterJsOptions.console ?? ['error', 'warn', 'debug'];
+        if (consoleMethods) consoleMethods.forEach(method => this.wrapConsole(method));
     },
     counter: 0,
     async send(data) {
@@ -49,7 +51,7 @@ globalThis.reporterJs = {
                 headers: {'Content-Type': 'application/json',},
                 body: JSON.stringify(data),
             }).catch(e => {
-                console.warn('%c Failed to send error report:' + e.message, 'color:red');
+                (this.originalConsole?.warn || console.warn).call(console, '%c Failed to send error report:' + e.message, 'color:red');
             });
         }
         if (showFirst && this.counter < 2) this.showError(data);
@@ -59,7 +61,7 @@ globalThis.reporterJs = {
         if (document.body) {
             const div = document.createElement('div');
             div.style.cssText = 'position:fixed; top:0; left:0; right:0; background:rgba(255,40,0,.7); color:#fff; padding:20px; font-size:17px; z-index:1000; text-align:center';
-            div.innerHTML = `${data.message}<br>${data.file} :${data.line} :${data.col}`;
+            div.append(data.message, document.createElement('br'), `${data.file} :${data.line} :${data.col}`);
             document.body.append(div);
             const to = setTimeout(() => div.remove(), 2000);
             div.addEventListener('mouseenter', () => clearTimeout(to) );
@@ -146,7 +148,9 @@ globalThis.reporterJs = {
         }
     },
     wrapConsole(method){
+        this.originalConsole = this.originalConsole || {};
         const original = console[method];
+        this.originalConsole[method] = original;
         console[method] = (...args)=>{
             const errArg = args.find(a => a instanceof Error);
             let stack, latest;
