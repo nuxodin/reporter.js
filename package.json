@@ -1,0 +1,19 @@
+{
+  "name": "@nuxodin/reporter",
+  "version": "0.0.0",
+  "description": "Reports JavaScript errors, unhandled rejections and console calls to your server",
+  "type": "module",
+  "author": "Tobias Buschor",
+  "license": "MIT",
+  "exports": {
+    ".": "./mod.js"
+  },
+  "files": [
+    "mod.js",
+    "LICENSE"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nuxodin/reporter.js"
+  }
+}

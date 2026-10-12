@@ -35,6 +35,15 @@ globalThis.reporterJsOptions = {
 await import('https://cdn.jsdelivr.net/gh/nuxodin/reporter.js/mod.js');
 ```
 
+### As a package
+
+`npm install @nuxodin/reporter` or `deno add jsr:@nuxodin/reporter`, then:
+
+```js
+globalThis.reporterJsOptions = { url: 'https://example.com/errors' };
+await import('@nuxodin/reporter');
+```
+
 ## Options
 
 Set `globalThis.reporterJsOptions` before loading `mod.js`.
