@@ -1,7 +1,7 @@
 # reporter.js
 Application monitoring / Troubleshooting
 
-Reporter.js is a small JavaScript library for monitoring websites and Deno applications. It sends reports for JavaScript errors, unhandled rejections, console calls, and ReportingObserver reports to your server.
+Reporter.js is a small JavaScript library for monitoring websites and Node, Bun and Deno applications. It sends reports for JavaScript errors, unhandled rejections, console calls, and ReportingObserver reports to your server.
 
 ## Features
 
@@ -25,7 +25,7 @@ window.reporterJsOptions = {
 <script src="https://cdn.jsdelivr.net/gh/nuxodin/reporter.js/mod.js"></script>
 ```
 
-### In Deno
+### In Node, Bun and Deno
 
 ```js
 globalThis.reporterJsOptions = {

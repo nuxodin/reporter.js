@@ -15,8 +15,15 @@ globalThis.reporterJs = {
         // let unloading = false;
         // addEventListener('beforeunload',function(e){ unloading = e.type; });
         // addEventListener('unload',function(e){ unloading = e.type; });
-        addEventListener('error', this.handleErrorEvent.bind(this), true);
-        addEventListener('unhandledrejection', this.handleUnhandledRejectionEvent.bind(this), true);
+        if (globalThis.process?.on && !globalThis.Deno) { // Node and Bun: no such events
+            // a monitor only listens, the process still crashes
+            process.on('uncaughtExceptionMonitor', this.handleUncaught.bind(this));
+            // Bun skips the monitor for rejections: rethrown they reach it and crash as usual
+            if (globalThis.Bun) process.on('unhandledRejection', reason => { throw reason; });
+        } else {
+            addEventListener('error', this.handleErrorEvent.bind(this), true);
+            addEventListener('unhandledrejection', this.handleUnhandledRejectionEvent.bind(this), true);
+        }
         if (globalThis.ReportingObserver) {
             const observer = new ReportingObserver(this.handleReportingObserver.bind(this), {buffered: true});
             observer.observe();
@@ -92,7 +99,7 @@ globalThis.reporterJs = {
         return stack;
     },
     handleErrorEvent(e){
-        if (e.bubbles) { // its a real error
+        if (e.bubbles || e.error) { // its a real error (Deno: not bubbling)
             const error = e.error;
             const stack = error && error.stack ? this.unserializeStack(error.stack) : [];
             this.send({
@@ -129,6 +136,18 @@ globalThis.reporterJs = {
             col:  stack[0].col,
             backtrace: stack,
             prio: 'error',
+        });
+    },
+    handleUncaught(error, origin){
+        if (origin === 'unhandledRejection') return this.handleUnhandledRejectionEvent({reason: error});
+        const [top = {}] = this.unserializeStack(error?.stack);
+        this.handleErrorEvent({
+            bubbles: true,
+            error,
+            message: String(error?.message ?? error),
+            filename: top.file,
+            lineno: top.line,
+            colno: top.col,
         });
     },
     handleReportingObserver(reports){
