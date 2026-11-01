@@ -15,11 +15,15 @@ globalThis.reporterJs = {
         // let unloading = false;
         // addEventListener('beforeunload',function(e){ unloading = e.type; });
         // addEventListener('unload',function(e){ unloading = e.type; });
-        if (globalThis.process?.on && !globalThis.Deno) { // Node and Bun: no such events
-            // a monitor only listens, the process still crashes
-            process.on('uncaughtExceptionMonitor', this.handleUncaught.bind(this));
-            // Bun skips the monitor for rejections: rethrown they reach it and crash as usual
-            if (globalThis.Bun) process.on('unhandledRejection', reason => { throw reason; });
+        if (globalThis.process?.on) { // servers: the report needs time before the process ends
+            const fatal = async (error, origin) => {
+                (this.originalConsole?.error || console.error).call(console, error);
+                const timeout = new Promise(resolve => setTimeout(resolve, 2000));
+                await Promise.race([this.handleUncaught(error, origin), timeout]).catch(() => {});
+                process.exit(1);
+            };
+            process.on('uncaughtException', fatal);
+            if (globalThis.Bun) process.on('unhandledRejection', error => fatal(error, 'unhandledRejection')); // not routed above
         } else {
             addEventListener('error', this.handleErrorEvent.bind(this), true);
             addEventListener('unhandledrejection', this.handleUnhandledRejectionEvent.bind(this), true);
@@ -102,7 +106,7 @@ globalThis.reporterJs = {
         if (e.bubbles || e.error) { // its a real error (Deno: not bubbling)
             const error = e.error;
             const stack = error && error.stack ? this.unserializeStack(error.stack) : [];
-            this.send({
+            return this.send({
                 message: e.message,
                 file: e.filename,
                 line: e.lineno,
@@ -129,7 +133,7 @@ globalThis.reporterJs = {
         const message = e.reason ? e.reason.message : '(no e.reason, edge?)';
         const stack   = e.reason ? this.unserializeStack(e.reason.stack) : [];
         if (!stack[0]) stack[0] = {};
-        this.send({
+        return this.send({
             message: 'Unhandled rejection in Promise: '+message+(!stack.length?' (no stack)':''),
             file: stack[0].file,
             line: stack[0].line,
@@ -141,7 +145,7 @@ globalThis.reporterJs = {
     handleUncaught(error, origin){
         if (origin === 'unhandledRejection') return this.handleUnhandledRejectionEvent({reason: error});
         const [top = {}] = this.unserializeStack(error?.stack);
-        this.handleErrorEvent({
+        return this.handleErrorEvent({
             bubbles: true,
             error,
             message: String(error?.message ?? error),
